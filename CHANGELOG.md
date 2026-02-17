@@ -1,0 +1,32 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+- LOGOS Sprint: Initial repository creation
+- Voice specification for ORGAN-V discourse layer
+- Five canonical document type definitions
+- 11-field frontmatter schema with types and constraints
+- 100-point quality rubric across five scoring dimensions
+- Naming conventions for posts, series, and tag taxonomy
+- Review process with pre-publish checklist and human synthesis gate
+- ADR-001: Initial architecture decisions
+- ADR-002: Quality rubric design rationale
+
+## [0.1.0] - 2026-02-17
+
+### Added
+- Initial repository structure
+- README.md with full editorial governance documentation
+- seed.yaml automation contract
+- CI workflow (ci-minimal template)
+- MIT License
+- CHANGELOG.md
+
+[Unreleased]: https://github.com/organvm-v-logos/editorial-standards/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/organvm-v-logos/editorial-standards/releases/tag/v0.1.0

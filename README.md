@@ -1,2 +1,336 @@
+[![ORGAN-V: Logos](https://img.shields.io/badge/ORGAN--V-Logos-0d47a1?style=flat-square)](https://github.com/organvm-v-logos)
+[![CI](https://github.com/organvm-v-logos/editorial-standards/actions/workflows/ci.yml/badge.svg)](https://github.com/organvm-v-logos/editorial-standards/actions/workflows/ci.yml)
+[![Tier: Standard](https://img.shields.io/badge/tier-standard-2196f3?style=flat-square)](https://github.com/organvm-v-logos)
+
 # editorial-standards
-Style guide, voice/tone rules, quality rubrics, essay templates, frontmatter schema spec for ORGAN-V
+
+_Voice, quality, and structure governance for the ORGAN-V discourse layer_
+
+---
+
+## Overview
+
+editorial-standards is the governance layer for everything ORGAN-V publishes. It codifies the rules that determine what makes a piece of writing ready for the public process — the voice it should carry, the structure it should follow, the quality bar it must clear, and the metadata it must declare before it enters the pipeline.
+
+This repository does not contain essays. It contains the rules that essays must obey.
+
+The distinction matters. In a system that produces writing at scale — meta-system essays, case studies, retrospectives, post-mortems, methodology explorations — the editorial governance must live separately from the editorial content. Otherwise the rules drift with every new piece, standards become implicit, and quality becomes a matter of whoever last touched the file. editorial-standards makes the implicit explicit. It is the constitution for the discourse layer.
+
+Concretely, this repository provides:
+
+- **A voice specification** — the tonal and rhetorical identity that all ORGAN-V writing must express.
+- **Document type definitions** — the canonical set of essay types, each with its own structural template and purpose.
+- **A frontmatter schema** — the 11 required metadata fields that every essay must declare, with types, constraints, and validation rules.
+- **A quality rubric** — a 100-point advisory scoring system across five dimensions, used during review to surface weak spots before publication.
+- **Naming conventions** — deterministic rules for file names, series identifiers, and tag taxonomy, so that the essay-pipeline can process content without ambiguity.
+- **A review process** — the pre-publish checklist and human synthesis gate that stands between a draft and a deployed essay.
+
+Everything here is consumed downstream. The essay-pipeline reads the frontmatter schema to validate incoming drafts. The public-process repository is where validated essays land. editorial-standards sits upstream of both, defining the contract they depend on.
+
+## The Voice
+
+ORGAN-V writes for an audience that builds things. The voice is substantive, honest, technical-but-accessible, and process-oriented. It does not perform expertise — it demonstrates it through specificity. It does not hide uncertainty — it names what is unknown and explains why.
+
+The core principles of the ORGAN-V voice:
+
+**Substantive over performative.** Every sentence should carry information. Introductions that exist only to "set the stage" without contributing content are cut. If a paragraph can be removed without the reader losing anything, it should be removed.
+
+**Honest over polished.** The writing acknowledges false starts, dead ends, and things that did not work. The process is the product. A retrospective that only describes successes is not a retrospective — it is marketing. ORGAN-V does not do marketing.
+
+**Technical but accessible.** The writing assumes an intelligent reader who may not share the author's specific domain expertise. Jargon is used when precise, defined when first introduced, and avoided when a plain word will do. The goal is to be understood on first read, not to signal membership in a community.
+
+**Process-oriented.** ORGAN-V is interested in how things are built, not just what was built. The method matters. The sequence matters. The decisions that shaped the outcome — including the decisions that were wrong — matter. Writing that presents only the final artifact without explaining the path to it is incomplete.
+
+**Structurally transparent.** The reader should always know where they are in a piece. Headings are descriptive, not clever. Section order follows logical dependency (context before analysis, analysis before conclusion). The structure itself is an argument about what matters.
+
+These principles are not optional stylistic preferences. They are the editorial standard. Writing that violates them is sent back for revision.
+
+## Document Types
+
+ORGAN-V recognizes five canonical document types. Each serves a distinct purpose and carries its own structural expectations.
+
+### Meta-System Essay
+
+The flagship form. Meta-system essays explore how the eight-organ system works, why it is designed the way it is, and what principles govern its operation. They are the primary output of ORGAN-V and the most common content in public-process.
+
+**Structure:** Introduction (context + thesis), body sections (each advancing the argument), cross-references to other organs and repos, conclusion (synthesis + forward-looking implications).
+
+**Length:** 3,000-6,000 words.
+
+**Examples:** "01-orchestrate," "02-governance," "05-five-years" in the public-process essays collection.
+
+### Case Study
+
+A detailed examination of a specific project, feature, or system component. Case studies are empirical — they describe what happened, not what should happen. They follow the arc of a problem through its resolution (or its failure to resolve).
+
+**Structure:** Context (what existed before), challenge (what needed to change), approach (what was tried), outcome (what resulted), reflection (what was learned).
+
+**Length:** 2,000-4,000 words.
+
+### Retrospective
+
+A time-bounded look back at a sprint, phase, or milestone. Retrospectives are honest about what went well and what did not. They are not victory laps — they are diagnostic instruments.
+
+**Structure:** Scope (what period/milestone is covered), objectives (what was intended), execution (what actually happened), delta analysis (gaps between intent and outcome), lessons (what changes going forward).
+
+**Length:** 1,500-3,000 words.
+
+### Post-Mortem
+
+Written after something fails. Post-mortems are blameless, specific, and action-oriented. They exist to prevent recurrence, not to assign fault.
+
+**Structure:** Incident summary (what broke), timeline (when things happened), root cause analysis (why it broke), impact assessment (what was affected), remediation (what was done), prevention (what will be done differently).
+
+**Length:** 1,000-3,000 words.
+
+### Methodology Essay
+
+An explanation of a process, framework, or approach used within the system. Methodology essays are instructional — they describe how to do something, and why that approach was chosen over alternatives.
+
+**Structure:** Motivation (why this method exists), prior art (what alternatives exist), the method (step-by-step), trade-offs (what this method sacrifices), application (where it has been used).
+
+**Length:** 2,000-5,000 words.
+
+## Frontmatter Schema
+
+Every ORGAN-V essay must declare exactly 11 frontmatter fields. No more, no fewer. The frontmatter is the machine-readable contract that the essay-pipeline uses to validate, route, and publish content.
+
+| Field | Type | Required | Constraints |
+|---|---|---|---|
+| `title` | string | yes | 5-120 characters. No colons in the first 40 characters. |
+| `slug` | string | yes | Lowercase, hyphenated, 3-80 characters. Must match filename. |
+| `date` | ISO 8601 date | yes | Format: `YYYY-MM-DD`. Must not be in the future. |
+| `author` | string | yes | GitHub handle, prefixed with `@`. |
+| `document_type` | enum | yes | One of: `meta-system-essay`, `case-study`, `retrospective`, `post-mortem`, `methodology-essay`. |
+| `series` | string | no | Series identifier if part of a multi-part sequence. Lowercase, hyphenated. |
+| `series_order` | integer | conditional | Required if `series` is set. 1-indexed. |
+| `tags` | array of strings | yes | 2-8 tags from the controlled vocabulary. Lowercase, hyphenated. |
+| `organs_referenced` | array of integers | yes | Roman numeral organ numbers (1-8) that the essay references. Minimum 1. |
+| `status` | enum | yes | One of: `draft`, `review`, `published`, `archived`. |
+| `abstract` | string | yes | 80-300 characters. One-sentence summary. No markdown. |
+
+### Field Details
+
+**title** is the human-readable essay title. The colon restriction in the first 40 characters prevents ambiguity in YAML parsing and ensures clean rendering in RSS feeds and social cards.
+
+**slug** is the URL-safe identifier. It must match the filename (minus the date prefix and extension). For a file named `2026-02-17-editorial-governance.md`, the slug is `editorial-governance`.
+
+**date** is the publication date. Drafts use their creation date. The date must not be in the future because the essay-pipeline uses date ordering for feed generation and will reject future-dated entries.
+
+**author** is the GitHub handle of the primary author. For AI-assisted writing, the human author is listed here; AI contribution is noted in the body or acknowledgments.
+
+**document_type** maps to one of the five canonical types defined above. This field drives template selection and structural validation in the essay-pipeline.
+
+**series** and **series_order** are used together for multi-part essays. A series like `meta-system-foundations` with three parts would have `series_order` values of 1, 2, and 3. The essay-pipeline uses these to generate series navigation.
+
+**tags** must come from the controlled vocabulary defined in this repository's `tags.yaml` (to be created as the tag taxonomy grows). Tags are the primary discovery mechanism in public-process.
+
+**organs_referenced** is the cross-referencing backbone. Every essay must declare which organs it discusses. This field feeds the organ-level index pages and enables readers to explore the system by organ.
+
+**status** controls visibility. Only `published` essays appear in the public feed. `review` essays are visible to reviewers. `draft` and `archived` are not rendered.
+
+**abstract** is the single-sentence summary used in feed entries, social cards, and search results. It must be plain text (no markdown) and must fit the character constraints.
+
+## Quality Rubric
+
+The quality rubric is a 100-point advisory scoring system. It is not a gate — essays are not blocked from publication based on their score. It is a diagnostic tool that surfaces weak spots during review so that authors can address them before publication.
+
+The rubric has five dimensions, each worth 20 points:
+
+### Clarity (20 points)
+
+How easily can the reader understand the essay on first read? Clarity scores assess sentence structure, paragraph organization, jargon management, and logical flow. A 20/20 clarity score means a competent reader outside the author's specific domain can follow the argument without re-reading.
+
+- **16-20:** Clear, well-organized, minimal jargon or jargon well-defined.
+- **11-15:** Generally clear with occasional dense passages.
+- **6-10:** Requires significant effort to follow; restructuring needed.
+- **1-5:** Unclear; major rewrite required.
+
+### Accuracy (20 points)
+
+Are the claims correct? Are the technical details right? Accuracy scores assess factual correctness, proper use of terminology, and whether code samples, configuration examples, or system descriptions match the actual implementation.
+
+- **16-20:** All claims verifiable; technical details correct.
+- **11-15:** Minor inaccuracies that do not affect the argument.
+- **6-10:** Contains errors that could mislead the reader.
+- **1-5:** Fundamentally inaccurate; requires fact-checking pass.
+
+### Insight Density (20 points)
+
+Does the essay reward the reader's time? Insight density measures the ratio of novel or useful information to total word count. High insight density means the essay is tightly written — every section advances the reader's understanding. Low density means the essay is padded with filler, repetition, or obvious observations.
+
+- **16-20:** Nearly every paragraph offers something new or useful.
+- **11-15:** Strong core insights with some padding.
+- **6-10:** Insight buried under excessive context or repetition.
+- **1-5:** Little new information; could be reduced to a fraction of its length.
+
+### Cross-Referencing (20 points)
+
+Does the essay connect to the broader system? Cross-referencing scores assess how well the essay links to other organs, repos, essays, and system concepts. ORGAN-V writing does not exist in isolation — it exists to document a system, and that system context must be present.
+
+- **16-20:** Rich, meaningful connections to other system components.
+- **11-15:** Some cross-references; could be better integrated.
+- **6-10:** Minimal system context; reads as standalone.
+- **1-5:** No cross-references; disconnected from the system.
+
+### Portfolio Relevance (20 points)
+
+Does this essay belong in the public process? Portfolio relevance assesses whether the essay contributes to the system's public narrative. It asks: if someone is reading the public-process collection to understand this system, does this essay help? Or is it internal documentation that does not serve an external reader?
+
+- **16-20:** Essential reading for understanding the system.
+- **11-15:** Useful but not critical; adds depth.
+- **6-10:** Marginal relevance; might be better as internal documentation.
+- **1-5:** Does not belong in the public collection.
+
+### Scoring Guidelines
+
+Scores are assigned by the reviewer during the review process. The total score is the sum of all five dimensions (0-100). Scores are advisory — they inform the author, they do not block publication. However, essays scoring below 60 are flagged for revision, and essays below 40 are returned to draft status with specific feedback.
+
+The rubric is intentionally calibrated to be difficult. A score of 80+ represents genuinely excellent work. A score of 60-79 represents solid work that meets the standard. The system does not grade on a curve.
+
+## Naming Conventions
+
+### File Naming (_posts/)
+
+All essays in public-process follow the Jekyll `_posts/` convention:
+
+```
+YYYY-MM-DD-slug.md
+```
+
+- **Date prefix:** ISO 8601 date, matching the `date` frontmatter field.
+- **Slug:** Lowercase, hyphenated, 3-80 characters. Must match the `slug` frontmatter field.
+- **Extension:** Always `.md`.
+
+Examples:
+- `2026-02-17-editorial-governance.md`
+- `2026-01-15-orchestration-patterns.md`
+- `2026-03-01-five-year-roadmap-retrospective.md`
+
+### Series Naming
+
+Series identifiers are lowercase, hyphenated strings that group related essays:
+
+```
+meta-system-foundations
+building-in-public
+organ-deep-dives
+```
+
+Series names should be descriptive and stable. Once published, a series name should not change (it is used in URLs and cross-references).
+
+### Tag Taxonomy
+
+Tags are drawn from a controlled vocabulary. The initial tag set includes:
+
+- **System tags:** `meta-system`, `orchestration`, `governance`, `architecture`, `infrastructure`
+- **Organ tags:** `organ-i`, `organ-ii`, `organ-iii`, `organ-iv`, `organ-v`, `organ-vi`, `organ-vii`, `organ-viii`
+- **Process tags:** `building-in-public`, `retrospective`, `post-mortem`, `methodology`, `case-study`
+- **Domain tags:** `creative-coding`, `audio-synthesis`, `generative-art`, `web-development`, `devops`, `documentation`
+- **Quality tags:** `flagship`, `deep-dive`, `introduction`, `reference`
+
+New tags can be proposed via pull request to this repository. Tags must be lowercase, hyphenated, and descriptive. The tag vocabulary is intentionally constrained to prevent tag sprawl.
+
+## Review Process
+
+### Pre-Publish Checklist
+
+Before an essay enters review, the author must verify:
+
+1. **Frontmatter complete.** All 11 required fields present and valid.
+2. **Slug matches filename.** The `slug` field matches the filename (minus date prefix and extension).
+3. **Word count in range.** The essay meets the minimum word count for its document type.
+4. **No broken internal links.** All cross-references to other repos, essays, or system components resolve.
+5. **Abstract is plain text.** No markdown in the abstract field.
+6. **Tags from controlled vocabulary.** All tags exist in the approved tag set.
+7. **Organs referenced accurately.** The `organs_referenced` array matches the organs actually discussed in the essay.
+8. **Code samples tested.** Any code, configuration, or command-line examples have been verified.
+9. **No secrets or credentials.** The essay does not contain API keys, tokens, or sensitive information.
+10. **Spell check passed.** The essay has been checked for typos and grammatical errors.
+
+### Human Synthesis Gate
+
+The human synthesis gate is the final step before publication. It is not automated and cannot be automated. A human reviewer reads the essay and assesses:
+
+- Does this essay say something worth saying?
+- Is the argument honest?
+- Would I send this to someone I respect?
+
+If the answer to all three is yes, the essay is published. If not, it goes back to the author with specific feedback.
+
+The human synthesis gate exists because quality rubrics can be gamed and checklists can be satisfied mechanically. The final judgment about whether a piece of writing is ready for the public process must be made by a human who cares about the work.
+
+## How It Fits the System
+
+editorial-standards is part of ORGAN-V (Logos / Public Process), the discourse and documentation organ of the eight-organ creative-institutional system.
+
+Within ORGAN-V, it connects to:
+
+- **[essay-pipeline](https://github.com/organvm-v-logos/essay-pipeline)** — the automated pipeline that validates, transforms, and deploys essays. essay-pipeline consumes the frontmatter schema and document type definitions from this repository to validate incoming drafts.
+- **[public-process](https://github.com/organvm-v-logos/public-process)** — the Jekyll-powered publication venue where validated essays are deployed. public-process uses the templates and naming conventions defined here.
+
+The relationship is directional: editorial-standards defines the rules, essay-pipeline enforces them, and public-process displays the results. Changes to editorial standards flow downstream through the pipeline to the publication layer.
+
+Beyond ORGAN-V, editorial-standards influences how documentation is written across the entire system. While each organ has its own documentation practices, the voice principles and quality rubric defined here serve as the reference standard that other organs can adopt or adapt.
+
+## Development
+
+### Prerequisites
+
+No build tools are required. editorial-standards is a documentation-and-schema repository. All content is Markdown and YAML.
+
+### Local Development
+
+```bash
+git clone https://github.com/organvm-v-logos/editorial-standards.git
+cd editorial-standards
+```
+
+To validate YAML files locally:
+
+```bash
+python3 -c "
+import yaml, glob, sys
+errors = 0
+for f in glob.glob('**/*.yaml', recursive=True) + glob.glob('**/*.yml', recursive=True):
+    try:
+        yaml.safe_load(open(f))
+    except Exception as e:
+        print(f'ERROR: {f}: {e}')
+        errors += 1
+sys.exit(1 if errors else 0)
+"
+```
+
+### Repository Structure
+
+```
+editorial-standards/
+  README.md              # This file
+  LICENSE                # MIT License
+  seed.yaml              # Automation contract
+  CHANGELOG.md           # Release history
+  .github/
+    workflows/
+      ci.yml             # Minimal CI validation
+  docs/
+    adr/
+      001-initial-architecture.md
+      002-quality-rubric-design.md
+```
+
+## Contributing
+
+Contributions to editorial-standards affect the governance rules for all ORGAN-V writing. Changes should be proposed via pull request with a clear rationale for why the standard needs to change.
+
+For voice or rubric changes, include examples of how the change would affect existing published essays. For schema changes, coordinate with the essay-pipeline repository to ensure validation logic is updated in parallel.
+
+See the [ORGAN-V contributing guidelines](https://github.com/organvm-v-logos/.github/blob/main/CONTRIBUTING.md) for general contribution practices.
+
+## License
+
+[MIT](LICENSE) -- 2026 [@4444J99](https://github.com/4444j99)
+
+---
+
+<sub>editorial-standards — ORGAN V: Logos — part of the eight-organ creative-institutional system — [@4444j99](https://github.com/4444j99) — LOGOS Sprint 2026-02-17</sub>

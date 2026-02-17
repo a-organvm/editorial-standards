@@ -1,0 +1,50 @@
+# seed.yaml — Automation Contract for organvm-v-logos/editorial-standards
+# Schema: seed/v1.0
+# Generated: 2026-02-17 (LOGOS Sprint)
+
+schema_version: "1.0"
+organ: V
+organ_name: Public Process
+repo: editorial-standards
+org: organvm-v-logos
+
+metadata:
+  implementation_status: SKELETON
+  tier: standard
+  promotion_status: LOCAL
+  last_validated: "2026-02-17"
+  generated: "2026-02-17"
+  sprint: "LOGOS"
+
+agents:
+  - name: ci
+    trigger: on_push
+    workflow: .github/workflows/ci.yml
+    description: "Continuous integration pipeline"
+
+produces:
+  - type: editorial-governance
+    format: markdown
+    consumers:
+      - organ: ORGAN-V
+        repos: ["essay-pipeline", "public-process"]
+        relationship: "governs"
+  - type: frontmatter-schema
+    format: yaml
+    consumers:
+      - organ: ORGAN-V
+        repos: ["essay-pipeline"]
+        relationship: "defines-schema-for"
+  - type: essay-templates
+    format: markdown
+    consumers:
+      - organ: ORGAN-V
+        repos: ["public-process"]
+        relationship: "provides-templates-for"
+
+consumes: []
+
+subscriptions:
+  - event: essay.published
+    source: ORGAN-V
+    action: "Validate published essay against quality rubric"
