@@ -1,0 +1,75 @@
+# tag-governance.yaml — Tag Usage Rules and Preferred Tags
+# Version: 1.0
+# Governs: The 'tags' field in essay frontmatter
+
+schema_version: "1.0"
+description: >
+  Tag naming conventions, limits, and the curated preferred-tags list.
+  The validator enforces format rules; the preferred list is advisory.
+
+rules:
+  max_per_essay: 8
+  min_per_essay: 2
+  format: "lowercase, hyphenated (e.g. 'building-in-public', not 'Building In Public')"
+  pattern: "^[a-z0-9]+(-[a-z0-9]+)*$"
+
+# Curated from the 80+ tags across 40 essays.
+# Authors should prefer these. New tags are allowed but should be deliberate.
+preferred_tags:
+  # System & governance
+  - governance
+  - meta-system
+  - orchestration
+  - infrastructure
+  - architecture
+  - automation
+  - ci-cd
+  - devops
+  - systems-engineering
+  - systems-design
+
+  # Creative practice
+  - creative-practice
+  - creative-infrastructure
+  - art
+  - theory
+  - methodology
+  - institutional-design
+
+  # Portfolio & process
+  - portfolio
+  - building-in-public
+  - transparency
+  - honesty
+  - documentation
+
+  # Technical domains
+  - ai-conductor
+  - autonomous-systems
+  - generative-music
+  - generative-art
+  - game-design
+  - commerce
+
+  # Organs
+  - organ-i
+  - organ-ii
+  - organ-iii
+  - organ-iv
+  - organ-v
+  - organ-vi
+  - organ-vii
+
+  # Sprints & milestones
+  - retrospective
+  - platinum-sprint
+  - promotion-pipeline
+  - graceful-degradation
+
+  # Specific techniques
+  - guide
+  - frameworks
+  - metrics
+  - self-assessment
+  - anti-patterns
+  - operational-cadence

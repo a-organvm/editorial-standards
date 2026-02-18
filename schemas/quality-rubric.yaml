@@ -1,0 +1,66 @@
+# quality-rubric.yaml — Essay Quality Scoring System
+# Version: 1.0
+# 100-point scale across 5 dimensions (20 points each)
+
+schema_version: "1.0"
+description: >
+  Scoring rubric for evaluating essay quality. Used during editorial review,
+  not enforced by CI. Each dimension scored 0-20.
+
+total_points: 100
+
+dimensions:
+  substance:
+    max_points: 20
+    description: "Information density, no filler"
+    scoring:
+      20: "Every paragraph advances the argument. Dense with insight, data, or analysis."
+      15: "Mostly substantive with minor padding. Clear thesis throughout."
+      10: "Mixed — some strong sections, some filler or repetition."
+      5: "Predominantly vague or padded. Few concrete claims."
+      0: "No discernible thesis. Generic content that could describe any project."
+
+  honesty:
+    max_points: 20
+    description: "Acknowledges limitations, uncertainty, and failures"
+    scoring:
+      20: "Openly discusses what didn't work, what remains uncertain, and what was learned from failure."
+      15: "Acknowledges some limitations. Mostly honest but occasionally spins negatives."
+      10: "Balanced but avoids the hardest truths. Limitations mentioned in passing."
+      5: "Promotional tone dominates. Failures minimized or omitted."
+      0: "Pure marketing. No acknowledgment of difficulty, failure, or uncertainty."
+
+  structure:
+    max_points: 20
+    description: "Clear headings, logical flow, scannable"
+    scoring:
+      20: "Clear hierarchy. Each section builds on the last. Scannable via headings alone."
+      15: "Well-organized with minor flow issues. Headings are descriptive."
+      10: "Adequate structure but some sections feel misplaced or redundant."
+      5: "Weak organization. Hard to follow the argument across sections."
+      0: "No discernible structure. Wall of text or random ordering."
+
+  specificity:
+    max_points: 20
+    description: "Concrete examples, numbers, repo names, code references"
+    scoring:
+      20: "Named repos, specific metrics, concrete examples, code snippets where relevant."
+      15: "Mostly specific with occasional vague claims. Some numbers and names."
+      10: "Mix of specific and generic. Some examples but not consistently grounded."
+      5: "Predominantly abstract. Few concrete references."
+      0: "Entirely theoretical. No grounding in actual implementation."
+
+  completeness:
+    max_points: 20
+    description: "All required sections present, metadata filled"
+    scoring:
+      20: "All frontmatter complete. All template sections present. No TODO markers."
+      15: "Frontmatter complete. Most sections present. Minor gaps."
+      10: "Some frontmatter missing or incomplete. Several sections thin."
+      5: "Significant gaps. Multiple required fields missing."
+      0: "Stub or outline only. Not a complete essay."
+
+thresholds:
+  publish: 60
+  flagship_candidate: 80
+  exemplar: 90

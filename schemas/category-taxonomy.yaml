@@ -1,0 +1,56 @@
+# category-taxonomy.yaml — Canonical Essay Categories
+# Version: 1.0
+# Governs: The 'category' field in essay frontmatter
+
+schema_version: "1.0"
+description: >
+  Five canonical categories for classifying essays. Every essay must belong
+  to exactly one. Non-canonical categories are rejected by the validator.
+
+categories:
+  meta-system:
+    description: "System architecture, governance, philosophy, and the meta-layer that connects all eight organs."
+    examples:
+      - "How We Orchestrate Eight Organs Across 79 Repositories"
+      - "Registry-Driven Development"
+      - "The Promotion Pipeline"
+    typical_count: 19
+
+  case-study:
+    description: "Deep dives into specific projects, repos, or implementations. Concrete, evidence-based analysis of what was built and how."
+    examples:
+      - "Aetheria RPG Post-Mortem"
+      - "Generative Music Case Study"
+      - "Coaching Platform Metrics"
+    typical_count: 7
+
+  guide:
+    description: "Prescriptive, instructional content. How-to essays that teach a method or approach."
+    examples:
+      - "Dependency Graph as Design Tool"
+      - "How to Think About Autonomous Systems"
+      - "Governance Frameworks for Artists"
+    typical_count: 6
+
+  methodology:
+    description: "Specific methods, frameworks, or approaches. More theoretical than guides — explains the 'why' behind a technique."
+    examples:
+      - "Aesthetic Nervous System"
+      - "Provenance as Practice"
+      - "Seed Contracts"
+    typical_count: 4
+
+  retrospective:
+    description: "Looking back at sprints, launches, or processes. Honest assessment of what worked and what didn't."
+    examples:
+      - "The Parallel Launch"
+      - "The Convergence"
+      - "Twelve Decisions"
+    typical_count: 4
+
+# Migration map from deprecated categories
+deprecated_categories:
+  subsidiary: "case-study"
+  governance-practice: "meta-system"
+  product-update: "case-study"
+  reflection: "retrospective"

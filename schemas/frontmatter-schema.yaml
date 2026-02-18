@@ -1,0 +1,71 @@
+# frontmatter-schema.yaml — ORGAN-V Essay Frontmatter Specification
+# Version: 1.0
+# Governs: All essays in organvm-v-logos/public-process/_posts/
+
+schema_version: "1.0"
+description: >
+  Defines required frontmatter fields, types, and constraints for all essays
+  published through the ORGAN-V public-process site. The essay-pipeline
+  validator enforces this schema on every push.
+
+required_fields:
+  layout:
+    type: string
+    enum: [essay]
+    description: "Jekyll layout — always 'essay' for published essays"
+
+  title:
+    type: string
+    min_length: 10
+    max_length: 200
+    description: "Essay title. Descriptive, not clickbait."
+
+  author:
+    type: string
+    pattern: "^@"
+    description: "GitHub handle with @ prefix"
+
+  date:
+    type: string
+    format: "YYYY-MM-DD"
+    pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+    description: "Publication date in ISO 8601 format"
+
+  tags:
+    type: list
+    min_items: 2
+    max_items: 8
+    item_type: string
+    description: "Lowercase, hyphenated topic tags. See tag-governance.yaml."
+
+  category:
+    type: string
+    enum: [meta-system, case-study, retrospective, guide, methodology]
+    description: "One of the 5 canonical categories. See category-taxonomy.yaml."
+
+  excerpt:
+    type: string
+    min_length: 50
+    max_length: 400
+    description: "One-paragraph summary shown on index pages and in feeds."
+
+  portfolio_relevance:
+    type: string
+    enum: [CRITICAL, HIGH, MEDIUM]
+    description: "How central this essay is to the portfolio narrative."
+
+  related_repos:
+    type: list
+    item_type: string
+    item_pattern: "^(organvm-|meta-organvm)"
+    description: "GitHub org/repo paths for repos discussed in the essay."
+
+  reading_time:
+    type: string
+    pattern: "^\\d+ min$"
+    description: "Estimated reading time, e.g. '12 min'."
+
+  word_count:
+    type: integer
+    min: 500
+    description: "Approximate word count of the essay body."

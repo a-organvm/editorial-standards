@@ -1,4 +1,4 @@
-name: Minimal CI
+name: Editorial Standards CI
 
 on:
   push:
@@ -14,59 +14,60 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Detect repository type
-        id: detect
-        run: |
-          if [ -f "Package.swift" ]; then
-            echo "type=swift" >> $GITHUB_OUTPUT
-          elif [ -f "Gemfile" ] || [ -f "_config.yml" ]; then
-            echo "type=ruby" >> $GITHUB_OUTPUT
-          elif [ -f "package.json" ]; then
-            echo "type=node" >> $GITHUB_OUTPUT
-          elif [ -f "pyproject.toml" ] || [ -f "requirements.txt" ]; then
-            echo "type=python" >> $GITHUB_OUTPUT
-          else
-            echo "type=generic" >> $GITHUB_OUTPUT
-          fi
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
-      - name: Validate structure
-        run: |
-          echo "Repository structure:"
-          ls -la
-          echo ""
-          echo "README check:"
-          if [ -f "README.md" ]; then
-            echo "::notice::README.md found"
-            wc -w README.md
-          else
-            echo "::warning::No README.md found"
-          fi
-          echo ""
-          echo "License check:"
-          if [ -f "LICENSE" ] || [ -f "LICENSE.md" ]; then
-            echo "::notice::License file found"
-          else
-            echo "::warning::No license file found"
-          fi
+      - name: Install dependencies
+        run: pip install pyyaml
 
-      - name: Validate YAML files
-        continue-on-error: true
+      - name: Validate YAML schemas
         run: |
-          if command -v python3 &> /dev/null; then
-            python3 -c "
+          python3 -c "
           import yaml, glob, sys
           errors = 0
-          for f in glob.glob('**/*.yaml', recursive=True) + glob.glob('**/*.yml', recursive=True):
+          for f in glob.glob('schemas/*.yaml'):
               try:
-                  yaml.safe_load(open(f))
+                  data = yaml.safe_load(open(f))
+                  if not isinstance(data, dict):
+                      print(f'::error file={f}::Not a valid YAML mapping')
+                      errors += 1
+                  else:
+                      print(f'::notice file={f}::Valid ({len(data)} top-level keys)')
               except Exception as e:
                   print(f'::error file={f}::{e}')
                   errors += 1
           if errors:
               sys.exit(1)
-          print('All YAML files valid')
+          print(f'All {len(glob.glob(\"schemas/*.yaml\"))} schema files valid')
           "
-          fi
+
+      - name: Validate templates have frontmatter
+        run: |
+          python3 -c "
+          import glob, sys
+          errors = 0
+          for f in glob.glob('templates/*.md'):
+              content = open(f).read()
+              if not content.startswith('---'):
+                  print(f'::error file={f}::Missing frontmatter delimiters')
+                  errors += 1
+              parts = content.split('---', 2)
+              if len(parts) < 3:
+                  print(f'::error file={f}::Incomplete frontmatter')
+                  errors += 1
+              else:
+                  print(f'::notice file={f}::Valid template')
+          if errors:
+              sys.exit(1)
+          print(f'All {len(glob.glob(\"templates/*.md\"))} templates valid')
+          "
+
+      - name: Validate structure
+        run: |
+          test -f "README.md" && echo "::notice::README.md found" || echo "::warning::No README.md found"
+          test -f "LICENSE" && echo "::notice::License file found" || echo "::warning::No license file found"
 
       - name: Success
-        run: echo "::notice::Minimal CI validation passed"
+        run: echo "::notice::Editorial Standards CI passed"
