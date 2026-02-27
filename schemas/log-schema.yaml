@@ -1,0 +1,52 @@
+# log-schema.yaml — ORGAN-V Captain's Log Frontmatter Specification
+# Version: 1.0
+# Governs: All logs in organvm-v-logos/public-process/_logs/
+
+schema_version: "1.0"
+description: >
+  Lightweight frontmatter schema for daily captain's logs. Designed for
+  quick, low-friction daily entries — no minimum word count, no portfolio
+  relevance rating, no academic citations.
+
+required_fields:
+  layout:
+    type: string
+    enum: [log]
+    description: "Jekyll layout — always 'log' for captain's log entries"
+
+  title:
+    type: string
+    min_length: 5
+    max_length: 150
+    description: "Brief log title — can be informal"
+
+  date:
+    type: string
+    format: "YYYY-MM-DD"
+    pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+    description: "Publication date in ISO 8601 format"
+
+  tags:
+    type: list
+    min_items: 1
+    max_items: 5
+    item_type: string
+    item_pattern: "^[a-z0-9]+(-[a-z0-9]+)*$"
+    description: "Lowercase, hyphenated topic tags. Lighter than essays (1-5 instead of 2-8)."
+
+  mood:
+    type: string
+    enum: [focused, exploratory, reflective, frustrated, breakthrough, routine]
+    description: "Author's working mood — powers future analytics and filtering"
+
+optional_fields:
+  organs_touched:
+    type: list
+    item_type: string
+    item_pattern: "^(I|II|III|IV|V|VI|VII|META)$"
+    description: "Which organs were worked on today"
+
+  links:
+    type: list
+    item_type: string
+    description: "Relevant URLs referenced in this log entry"

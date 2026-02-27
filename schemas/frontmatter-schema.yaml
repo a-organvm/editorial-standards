@@ -70,3 +70,9 @@ required_fields:
     type: integer
     min: 500
     description: "Approximate word count of the essay body."
+
+optional_fields:
+  references:
+    type: list
+    item_type: string
+    description: "Formatted citation strings for academic references. Not full BibTeX — plain-text entries rendered as an ordered list at essay bottom."
