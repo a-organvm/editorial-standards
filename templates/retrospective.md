@@ -10,6 +10,7 @@ portfolio_relevance: ""
 related_repos: []
 reading_time: ""
 word_count: 0
+references: []
 ---
 
 # [Title]
@@ -33,3 +34,10 @@ Insights that changed how the system operates going forward.
 ## What Changed as a Result
 
 Concrete actions taken after the retrospective. Policy changes, architectural shifts, process updates.
+
+## References
+
+<!-- Numbered list of all sources cited in the essay. Use inline hyperlinks for web sources and [N] footnotes for books/academic references. Example:
+1. Author, "Title," *Publication*, Year. URL
+2. Author, *Book Title*, Publisher, Year.
+-->

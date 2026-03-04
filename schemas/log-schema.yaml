@@ -50,3 +50,8 @@ optional_fields:
     type: list
     item_type: string
     description: "Relevant URLs referenced in this log entry"
+
+  references:
+    type: list
+    item_type: string
+    description: "Citation strings for external sources referenced in the log. Same format as essay references."

@@ -10,6 +10,7 @@ portfolio_relevance: ""
 related_repos: []
 reading_time: ""
 word_count: 0
+references: []
 ---
 
 # [Title]
@@ -37,3 +38,10 @@ What worked, what didn't, what you'd change. Honest retrospection.
 ## Relationship to the Organ System
 
 How does this project connect to the broader eight-organ architecture? What dependencies does it create or consume?
+
+## References
+
+<!-- Numbered list of all sources cited in the essay. Use inline hyperlinks for web sources and [N] footnotes for books/academic references. Example:
+1. Author, "Title," *Publication*, Year. URL
+2. Author, *Book Title*, Publisher, Year.
+-->

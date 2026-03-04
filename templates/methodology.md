@@ -10,6 +10,7 @@ portfolio_relevance: ""
 related_repos: []
 reading_time: ""
 word_count: 0
+references: []
 ---
 
 # [Title]
@@ -37,3 +38,10 @@ Where does this method break down? What assumptions does it require?
 ## Comparison to Alternatives
 
 How does this differ from standard approaches? What trade-offs does it make?
+
+## References
+
+<!-- Numbered list of all sources cited in the essay. Use inline hyperlinks for web sources and [N] footnotes for books/academic references. Example:
+1. Author, "Title," *Publication*, Year. URL
+2. Author, *Book Title*, Publisher, Year.
+-->

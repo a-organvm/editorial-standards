@@ -71,8 +71,10 @@ required_fields:
     min: 500
     description: "Approximate word count of the essay body."
 
-optional_fields:
   references:
     type: list
+    min_items: 0
     item_type: string
-    description: "Formatted citation strings for academic references. Not full BibTeX — plain-text entries rendered as an ordered list at essay bottom."
+    description: "Citation strings for sources referenced in the essay. Supports two formats: inline hyperlinks in body text and numbered [N] footnotes for books/academic sources. Rendered as an ordered list at essay bottom. Use references: [] for essays with no external citations."
+
+optional_fields: {}
