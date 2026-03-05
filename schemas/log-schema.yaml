@@ -40,6 +40,24 @@ required_fields:
     description: "Author's working mood — powers future analytics and filtering"
 
 optional_fields:
+  activity:
+    type: object
+    required_keys: [since, commits, repos_active, files_changed]
+    properties:
+      since:
+        type: string
+        pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+      commits:
+        type: integer
+        min: 0
+      repos_active:
+        type: integer
+        min: 0
+      files_changed:
+        type: integer
+        min: 0
+    description: "Structured activity summary emitted by log_generator."
+
   organs_touched:
     type: list
     item_type: string
