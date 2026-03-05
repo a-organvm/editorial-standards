@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+WORKSPACE_ROOT="$(cd "$REPO_ROOT/.." && pwd)"
+CHANGED="$(git diff --cached --name-only)"
+
+if ! printf '%s\n' "$CHANGED" | grep -Eq '^(schemas/|templates/|docs/|README\.md|CHANGELOG\.md|\.github/workflows/)'; then
+    exit 0
+fi
+
+echo "[pre-commit] editorial-standards checks"
+
+if [ -x "$WORKSPACE_ROOT/essay-pipeline/.venv/bin/python" ]; then
+    PY="$WORKSPACE_ROOT/essay-pipeline/.venv/bin/python"
+else
+    PY="python3"
+fi
+
+"$PY" - <<'PY'
+from pathlib import Path
+import sys
+import yaml
+
+root = Path.cwd()
+errors = []
+for schema in sorted((root / "schemas").glob("*.yaml")):
+    try:
+        yaml.safe_load(schema.read_text(encoding="utf-8"))
+    except Exception as exc:  # noqa: BLE001
+        errors.append(f"{schema.name}: {exc}")
+
+if errors:
+    for err in errors:
+        print(err)
+    sys.exit(1)
+PY
+
+if [ -d "$WORKSPACE_ROOT/essay-pipeline/src" ] && [ -d "$WORKSPACE_ROOT/public-process/_posts" ]; then
+    (
+        cd "$WORKSPACE_ROOT/essay-pipeline"
+        "$PY" -m src.validator \
+            --posts-dir "$WORKSPACE_ROOT/public-process/_posts/" \
+            --schema "$REPO_ROOT/schemas/frontmatter-schema.yaml"
+    )
+fi

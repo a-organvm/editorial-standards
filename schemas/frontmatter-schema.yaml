@@ -77,4 +77,14 @@ required_fields:
     item_type: string
     description: "Citation strings for sources referenced in the essay. Supports two formats: inline hyperlinks in body text and numbered [N] footnotes for books/academic sources. Rendered as an ordered list at essay bottom. Use references: [] for essays with no external citations."
 
-optional_fields: {}
+optional_fields:
+  word_count_policy:
+    type: string
+    enum: [computed, external]
+    description: "Word-count integrity mode. 'computed' enforces exact body-word match. 'external' allows aggregate counts with required override reason."
+
+  word_count_override_reason:
+    type: string
+    min_length: 20
+    max_length: 300
+    description: "Required when word_count_policy is 'external'. Explain why declared word_count differs from this file's computed body word count."
