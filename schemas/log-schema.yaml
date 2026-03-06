@@ -61,7 +61,7 @@ optional_fields:
   organs_touched:
     type: list
     item_type: string
-    item_pattern: "^(I|II|III|IV|V|VI|VII|META)$"
+    item_pattern: "^(I|II|III|IV|V|VI|VII|META|Personal)$"
     description: "Which organs were worked on today"
 
   links:
