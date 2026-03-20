@@ -1,0 +1,18 @@
+schema_version: '1.0'
+repo: editorial-standards
+organ: V
+display_name: "Editorial Standards — Governance for ORGAN-V essay and content quality"
+
+delivery:
+- platform: governance_docs
+  status: live
+  priority: critical
+  notes: "Editorial governance consumed by essay-pipeline and public-process"
+  next_action: "Keep standards aligned with publishing cadence"
+
+content:
+- platform: docs_site
+  status: live
+  priority: high
+  notes: "Style guide, quality criteria, review checklists"
+  next_action: "Maintain as publishing patterns evolve"
