@@ -703,6 +703,7 @@ REQUIRED_HOSTED_CI_STEPS = (
 )
 CANONICAL_MAPPING_IDENTITIES = {
     Path("seed.yaml"): {
+        "organ": "V",
         "org": CANONICAL_ORGANIZATION,
         "repo": CANONICAL_REPOSITORY,
         "produces": CANONICAL_PRODUCTION_EDGES,
@@ -836,6 +837,53 @@ QUALITY_RUBRIC_DIMENSIONS = (
     "cross_referencing",
     "portfolio_relevance",
 )
+CANONICAL_REQUIRED_FRONTMATTER = ('layout', 'title', 'author', 'date', 'tags', 'category', 'excerpt', 'portfolio_relevance', 'related_repos', 'reading_time', 'word_count', 'references')
+CANONICAL_OPTIONAL_FRONTMATTER = ('word_count_policy', 'word_count_override_reason')
+CANONICAL_QUALITY_POLICY = {'clarity': ('Clear prose, defined terminology, and logical organization',
+             ((20,
+               'Clear, well-organized, with minimal jargon or jargon well-defined.'),
+              (15, 'Generally clear with occasional dense passages.'),
+              (10, 'Requires significant effort to follow; restructuring is needed.'),
+              (5, 'Unclear and in need of a major rewrite.'),
+              (0, 'No comprehensible argument or usable structure.'))),
+ 'accuracy': ('Factual correctness and fidelity to the implementation',
+              ((20, 'All claims are verifiable and technical details are correct.'),
+               (15, 'Minor inaccuracies do not affect the argument.'),
+               (10, 'Errors could mislead the reader and require correction.'),
+               (5, 'The central account is fundamentally inaccurate.'),
+               (0, 'Claims are contradicted by the available evidence.'))),
+ 'insight_density': ("Novel or useful information relative to the reader's time",
+                     ((20, 'Nearly every paragraph offers something new or useful.'),
+                      (15, 'Strong core insights with some padding.'),
+                      (10, 'Useful insight is buried under context or repetition.'),
+                      (5,
+                       'Little new information; the essay could be substantially '
+                       'shorter.'),
+                      (0,
+                       'No material insight beyond generic or repeated statements.'))),
+ 'cross_referencing': ('Meaningful links to related organs, repositories, essays, and '
+                       'concepts',
+                       ((20,
+                         'Rich, meaningful connections to other system components.'),
+                        (15,
+                         'Relevant cross-references exist but could be integrated more '
+                         'deeply.'),
+                        (10,
+                         'System context is present but sparse or weakly connected.'),
+                        (5,
+                         'Minimal system context; the essay reads mostly as '
+                         'standalone.'),
+                        (0, 'No meaningful cross-references or system context.'))),
+ 'portfolio_relevance': ('Contribution to the public narrative of the system',
+                         ((20, 'Essential reading for understanding the system.'),
+                          (15, 'Useful but not critical; it adds meaningful depth.'),
+                          (10,
+                           'Marginal public relevance; internal documentation may be a '
+                           'better fit.'),
+                          (5, 'The connection to the public collection is weak.'),
+                          (0,
+                           'The essay does not serve the public-process collection.')))}
+
 QUALITY_RUBRIC_ANCHORS = {0, 5, 10, 15, 20}
 QUALITY_RUBRIC_THRESHOLDS = {
     "publish": 60,
@@ -1412,8 +1460,16 @@ def _is_nonnegative_integer(value: Any) -> bool:
 
 
 def _is_contained_regular_file(path: Path) -> bool:
-    """Reject missing files and tracked symlinks that escape the repository."""
-    return path.is_file() and not path.is_symlink()
+    """Require a regular file without any symlink in its absolute path."""
+    lexical = path.absolute()
+    try:
+        if any(component.is_symlink() for component in (lexical, *lexical.parents)):
+            return False
+        # Static repository-relative inputs cannot be redirected through a
+        # parent component; retain an explicit resolved identity check as well.
+        return lexical.is_file() and lexical.resolve(strict=True) == lexical
+    except (OSError, RuntimeError):
+        return False
 
 
 def _string_keyed_mapping(
@@ -2150,17 +2206,21 @@ RAW_HTML_GENERIC_START = re.compile(
     rf"|</[A-Za-z][A-Za-z0-9-]*[ \t]*>"
     rf")[ \t]*$"
 )
+INLINE_HTML_ATTRIBUTE = (
+    rf"[ \t\r\n]+{RAW_HTML_ATTRIBUTE_NAME}"
+    rf"(?:[ \t\r\n]*=[ \t\r\n]*{RAW_HTML_ATTRIBUTE_VALUE})?"
+)
 INLINE_HTML_TAG = re.compile(
-    rf"</?[A-Za-z][A-Za-z0-9-]*(?:{RAW_HTML_ATTRIBUTE})*[ \t]*/?>",
+    rf"</?[A-Za-z][A-Za-z0-9-]*(?:{INLINE_HTML_ATTRIBUTE})*[ \t\r\n]*/?>",
     re.IGNORECASE,
 )
 INLINE_HTML_ANCHOR_TAG = re.compile(
-    rf"<a(?P<attributes>(?:{RAW_HTML_ATTRIBUTE})*)[ \t]*/?>",
+    rf"<a(?P<attributes>(?:{INLINE_HTML_ATTRIBUTE})*)[ \t\r\n]*/?>",
     re.IGNORECASE,
 )
 INLINE_HTML_ATTRIBUTE_TOKEN = re.compile(
-    rf"[ \t]+(?P<name>{RAW_HTML_ATTRIBUTE_NAME})"
-    rf"(?:[ \t]*=[ \t]*(?P<value>{RAW_HTML_ATTRIBUTE_VALUE}))?"
+    rf"[ \t\r\n]+(?P<name>{RAW_HTML_ATTRIBUTE_NAME})"
+    rf"(?:[ \t\r\n]*=[ \t\r\n]*(?P<value>{RAW_HTML_ATTRIBUTE_VALUE}))?"
 )
 INLINE_URI_AUTOLINK = re.compile(
     r"<[A-Za-z][A-Za-z0-9+.-]{1,31}:[^<>\x00-\x20\x7f]*>"
@@ -2715,9 +2775,9 @@ def _inline_markdown_destination(
     line: str,
     opening_parenthesis: int,
 ) -> tuple[str, int] | None:
-    """Parse a same-line CommonMark inline-link destination and closing offset."""
+    """Parse a CommonMark soft-line-break inline-link destination and closing offset."""
     cursor = opening_parenthesis + 1
-    while cursor < len(line) and line[cursor] in " \t":
+    while cursor < len(line) and line[cursor] in " \t\r\n":
         cursor += 1
 
     if cursor < len(line) and line[cursor] == "<":
@@ -2725,6 +2785,8 @@ def _inline_markdown_destination(
         if end < 0:
             return None
         destination = line[cursor + 1 : end]
+        if "\n" in destination or "\r" in destination:
+            return None
         cursor = end + 1
     else:
         start = cursor
@@ -2740,7 +2802,7 @@ def _inline_markdown_destination(
                 if depth == 0:
                     return line[start:cursor], cursor + 1
                 depth -= 1
-            elif character in " \t" and depth == 0:
+            elif character in " \t\r\n" and depth == 0:
                 break
             cursor += 1
         if depth:
@@ -2748,7 +2810,7 @@ def _inline_markdown_destination(
         destination = line[start:cursor]
 
     title_separated = False
-    while cursor < len(line) and line[cursor] in " \t":
+    while cursor < len(line) and line[cursor] in " \t\r\n":
         title_separated = True
         cursor += 1
     if cursor < len(line) and line[cursor] in {'"', "'"}:
@@ -2766,7 +2828,7 @@ def _inline_markdown_destination(
         if end < 0:
             return None
         cursor = end + 1
-    while cursor < len(line) and line[cursor] in " \t":
+    while cursor < len(line) and line[cursor] in " \t\r\n":
         cursor += 1
     if cursor >= len(line) or line[cursor] != ")":
         return None
@@ -2871,9 +2933,24 @@ def _count_visible_markdown_destination(
     definitions, definition_lines = _markdown_reference_definitions(lines)
     count = 0
 
+    # Keep soft line endings within a rendered paragraph. Blank lines and
+    # reference-definition boundaries cannot form one inline link or tag.
+    inline_blocks: list[str] = []
+    paragraph: list[str] = []
     for line_index, line in enumerate(lines):
-        if line_index in definition_lines:
+        if line_index in definition_lines or not line.strip():
+            if paragraph:
+                inline_blocks.append("\n".join(paragraph))
+                paragraph = []
             continue
+        if re.match(r"^[ ]{0,3}#{1,6}\s", line) and paragraph:
+            inline_blocks.append("\n".join(paragraph))
+            paragraph = []
+        paragraph.append(line)
+    if paragraph:
+        inline_blocks.append("\n".join(paragraph))
+
+    for line in inline_blocks:
         syntax_ranges = _inline_syntax_ranges(line)
         ignored_ranges = [
             (start, end) for start, end, _kind in syntax_ranges
@@ -3815,6 +3892,10 @@ def _validate_readme(
     rendered_readme = "\n".join(rendered_lines)
     required_fields = set(required_map)
     optional_fields = set(optional_map)
+    if tuple(required_map) != CANONICAL_REQUIRED_FRONTMATTER:
+        errors.append("schemas/frontmatter-schema.yaml: canonical required frontmatter inventory mismatch")
+    if tuple(optional_map) != CANONICAL_OPTIONAL_FRONTMATTER:
+        errors.append("schemas/frontmatter-schema.yaml: canonical optional frontmatter inventory mismatch")
     development_lines = _exact_rendered_section(
         Path("README.md"), rendered_lines, "## Development", errors
     )
@@ -4742,6 +4823,10 @@ def _validate_quality_rubric(root: Path, errors: list[str]) -> None:
                 f"{rubric_path}: dimension {dimension!r} scoring anchors mismatch: "
                 f"expected={sorted(QUALITY_RUBRIC_ANCHORS)}, "
                 f"actual={sorted(scoring, key=str)}"
+            )
+        if (description, tuple(scoring.items())) != CANONICAL_QUALITY_POLICY[dimension]:
+            errors.append(
+                f"{rubric_path}: dimension {dimension!r} canonical quality scoring policy mismatch"
             )
         empty_anchors = [
             anchor
