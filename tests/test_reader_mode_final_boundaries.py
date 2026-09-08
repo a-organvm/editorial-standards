@@ -69,6 +69,26 @@ class FinalBoundaryTests(unittest.TestCase):
         path.write_text(path.read_text().replace('organ: V', 'organ: IV'))
         self.assert_error("expected organ='V'")
 
+    def test_removed_fence_preserves_inline_block_boundary(self):
+        path = self.root / 'templates/audiences/general.md'
+        path.write_text(path.read_text() + '\n![decoy\n```text\nhidden\n```\n'
+                        '<a href="../../README.md">Project home</a>](image.png)\n')
+        self.assert_error('duplicate canonical project link')
+
+    def test_seed_organ_name_identity(self):
+        path = self.root / 'seed.yaml'
+        self.assertIn('organ_name: Public Process', path.read_text())
+        path.write_text(path.read_text().replace('organ_name: Public Process',
+                                                'organ_name: Operations'))
+        self.assert_error("expected organ_name='Public Process'")
+
+    def test_quality_dimension_order_remains_canonical(self):
+        path = self.root / 'schemas/quality-rubric.yaml'
+        rubric = yaml.safe_load(path.read_text())
+        rubric['dimensions'] = dict(reversed(list(rubric['dimensions'].items())))
+        path.write_text(yaml.safe_dump(rubric, sort_keys=False))
+        self.assert_error('canonical quality dimension order')
+
     def test_parent_symlink_cannot_redirect_required_files(self):
         for directory in ['schemas', '.github', 'templates']:
             with self.subTest(directory=directory):

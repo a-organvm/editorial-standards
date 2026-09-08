@@ -704,6 +704,7 @@ REQUIRED_HOSTED_CI_STEPS = (
 CANONICAL_MAPPING_IDENTITIES = {
     Path("seed.yaml"): {
         "organ": "V",
+        "organ_name": "Public Process",
         "org": CANONICAL_ORGANIZATION,
         "repo": CANONICAL_REPOSITORY,
         "produces": CANONICAL_PRODUCTION_EDGES,
@@ -3284,6 +3285,7 @@ def _markdown_contract_view(
             or _is_indented_code_line(list_adjusted_line)
         ):
             fenced_blocks.append((current_h2, "indented", stripped))
+            rendered.append("")
             continue
         fence = re.match(r"(`{3,}|~{3,})", stripped)
         if fence is not None:
@@ -3299,6 +3301,8 @@ def _markdown_contract_view(
             fence_length = len(candidate)
             fence_info = candidate_info.lower()
             fence_owner_h2 = current_h2
+            # Removing a block must not join unrelated inline paragraphs.
+            rendered.append("")
             continue
 
         raw_special: tuple[re.Match[str], re.Pattern[str]] | None = None
@@ -3312,6 +3316,7 @@ def _markdown_contract_view(
                 raw_special = (start_match, end_pattern)
                 break
         if raw_special is not None:
+            rendered.append("")
             start_match, closing = raw_special
             special_end = closing.search(line, start_match.end())
             if special_end is None:
@@ -3328,6 +3333,7 @@ def _markdown_contract_view(
 
         literal_start = RAW_HTML_LITERAL_START.match(line)
         if literal_start is not None:
+            rendered.append("")
             tag = literal_start.group("tag")
             closing = re.compile(rf"</{re.escape(tag)}\s*>", re.IGNORECASE)
             literal_end = closing.search(line, literal_start.end())
@@ -3343,6 +3349,7 @@ def _markdown_contract_view(
             raw_html_end = closing
             continue
         if RAW_HTML_BLOCK_START.match(line) or RAW_HTML_GENERIC_START.match(line):
+            rendered.append("")
             raw_html_until_blank = True
             raw_html_block_lines = [line]
             continue
@@ -4780,6 +4787,11 @@ def _validate_quality_rubric(root: Path, errors: list[str]) -> None:
     )
     actual_dimensions = set(dimensions)
     expected_dimensions = set(QUALITY_RUBRIC_DIMENSIONS)
+    if tuple(dimensions) != QUALITY_RUBRIC_DIMENSIONS:
+        errors.append(
+            f"{rubric_path}: canonical quality dimension order mismatch: "
+            f"expected={list(QUALITY_RUBRIC_DIMENSIONS)}, actual={list(dimensions)}"
+        )
     if actual_dimensions != expected_dimensions:
         errors.append(
             f"{rubric_path}: dimension set mismatch: "
