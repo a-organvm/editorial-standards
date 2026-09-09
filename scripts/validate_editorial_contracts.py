@@ -95,6 +95,28 @@ CANONICAL_DEPRECATED_CATEGORIES = {
     "product-update": "case-study",
     "reflection": "retrospective",
 }
+CANONICAL_CATEGORY_DESCRIPTIONS = {
+    "meta-system": (
+        "System architecture, governance, philosophy, and the meta-layer "
+        "that connects all eight organs."
+    ),
+    "case-study": (
+        "Deep dives into specific projects, repos, or implementations. Concrete, "
+        "evidence-based analysis of what was built and how."
+    ),
+    "guide": (
+        "Prescriptive, instructional content. How-to essays that teach a "
+        "method or approach."
+    ),
+    "methodology": (
+        "Specific methods, frameworks, or approaches. More theoretical than "
+        "guides — explains the 'why' behind a technique."
+    ),
+    "retrospective": (
+        "Looking back at sprints, launches, or processes. Honest assessment "
+        "of what worked and what didn't."
+    ),
+}
 CANONICAL_READER_RUBRIC_SCORING_RULES = (
     "Score only observable public documentation.",
     "Do not convert word count, badges, or keyword density directly into quality.",
@@ -703,6 +725,7 @@ REQUIRED_HOSTED_CI_STEPS = (
 )
 CANONICAL_MAPPING_IDENTITIES = {
     Path("seed.yaml"): {
+        "schema_version": "1.0",
         "organ": "V",
         "organ_name": "Public Process",
         "org": CANONICAL_ORGANIZATION,
@@ -2925,6 +2948,84 @@ def _markdown_reference_definitions(
             definition_lines.update(range(index, consumed_line + 1))
     return definitions, definition_lines
 
+def _markdown_inline_blocks(
+    lines: list[str], definition_lines: set[int],
+) -> list[str]:
+    """Keep soft endings without joining distinct retained Markdown blocks."""
+    inline_blocks: list[str] = []
+    paragraph: list[str] = []
+    active_indents: list[int] = []
+    quote_depth = 0
+    previous_blank = True
+
+    def flush() -> None:
+        if paragraph:
+            inline_blocks.append("\n".join(paragraph))
+            paragraph.clear()
+
+    for line_index, line in enumerate(lines):
+        if line_index in definition_lines or not line.strip():
+            flush()
+            quote_depth = 0
+            previous_blank = True
+            continue
+
+        container = line
+        explicit_depth = 0
+        while (prefix := COMMONMARK_BLOCKQUOTE_PREFIX.match(container)) is not None:
+            explicit_depth += 1
+            container = container[prefix.end():]
+            if container.startswith((" ", "\t")):
+                container = container[1:]
+        if explicit_depth and explicit_depth != quote_depth:
+            flush()
+            active_indents = []
+        if explicit_depth:
+            quote_depth = explicit_depth
+        container = _strip_blockquote_prefixes(line)
+        new_item = _list_item_content(container)
+        interrupts = False
+        if new_item is None:
+            for indent in active_indents:
+                continuation = _strip_leading_columns(container, indent)
+                if continuation is not None:
+                    new_item = _list_item_content(continuation)
+                    if new_item is not None:
+                        break
+        if new_item is not None:
+            marker = COMMONMARK_LIST_ITEM_START.match(container)
+            interrupts = (
+                bool(active_indents)
+                or marker is None
+                or marker.group("marker") in {"-", "+", "*", "1.", "1)"}
+            )
+            if interrupts and new_item[1].strip():
+                flush()
+        if paragraph and new_item is not None and not interrupts:
+            normalized = container
+        else:
+            normalized, active_indents = _normalize_list_container_line(
+                container, active_indents, previous_blank,
+            )
+        previous_blank = not normalized.strip()
+        # Thematic breaks and setext underlines terminate the preceding inline
+        # block; ATX headings own exactly one line. None can complete an image
+        # label or HTML tag begun in a different paragraph.
+        if (
+            not normalized.strip()
+            or re.fullmatch(r"[ ]{0,3}(?:(?:\*[ \t]*){3,}|(?:_[ \t]*){3,}|(?:-[ \t]*){3,}|=+[ \t]*|-+[ \t]*)", normalized)
+        ):
+            flush()
+            continue
+        if re.match(r"^[ ]{0,3}#{1,6}(?:[ \t]|$)", normalized):
+            flush()
+            inline_blocks.append(normalized)
+            continue
+        paragraph.append(normalized)
+    flush()
+    return inline_blocks
+
+
 def _count_visible_markdown_destination(
     lines: list[str],
     expected_destination: str,
@@ -2933,23 +3034,7 @@ def _count_visible_markdown_destination(
     expected = _normalize_markdown_destination(expected_destination)
     definitions, definition_lines = _markdown_reference_definitions(lines)
     count = 0
-
-    # Keep soft line endings within a rendered paragraph. Blank lines and
-    # reference-definition boundaries cannot form one inline link or tag.
-    inline_blocks: list[str] = []
-    paragraph: list[str] = []
-    for line_index, line in enumerate(lines):
-        if line_index in definition_lines or not line.strip():
-            if paragraph:
-                inline_blocks.append("\n".join(paragraph))
-                paragraph = []
-            continue
-        if re.match(r"^[ ]{0,3}#{1,6}\s", line) and paragraph:
-            inline_blocks.append("\n".join(paragraph))
-            paragraph = []
-        paragraph.append(line)
-    if paragraph:
-        inline_blocks.append("\n".join(paragraph))
+    inline_blocks = _markdown_inline_blocks(lines, definition_lines)
 
     for line in inline_blocks:
         syntax_ranges = _inline_syntax_ranges(line)
@@ -2957,6 +3042,7 @@ def _count_visible_markdown_destination(
             (start, end) for start, end, _kind in syntax_ranges
         ]
         suppressed_html_ranges: list[tuple[int, int]] = []
+        link_candidates: list[tuple[int, int, int, str]] = []
         label_ends = _markdown_label_end_map(line, ignored_ranges)
         ignored_range_index = 0
         cursor = 0
@@ -3036,7 +3122,6 @@ def _count_visible_markdown_destination(
                 parsed = _inline_markdown_destination(line, after)
                 if parsed is not None:
                     destination, consumed = parsed
-                    suppressed_html_ranges.append((after, consumed))
             elif after < len(line) and line[after] == "[":
                 reference_end = label_ends.get(after)
                 if reference_end is not None:
@@ -3057,9 +3142,25 @@ def _count_visible_markdown_destination(
                     destination = definitions.get(key)
 
             if destination is not None:
-                if _normalize_markdown_destination(destination) == expected:
-                    count += 1
-                cursor = max(cursor, consumed)
+                link_candidates.append((start, end, consumed, destination))
+
+        # CommonMark disallows links inside links: a resolved inner link
+        # deactivates its outer opener. Work from right to left so that a valid
+        # outer link can also discard apparent links in its destination/title.
+        # Each candidate enters and leaves this stack at most once.
+        visible_links: list[tuple[int, int, int, str]] = []
+        for candidate in reversed(link_candidates):
+            start, end, consumed, destination = candidate
+            if visible_links and visible_links[-1][0] < end:
+                continue
+            while visible_links and visible_links[-1][0] < consumed:
+                visible_links.pop()
+            visible_links.append(candidate)
+        for _start, end, consumed, destination in visible_links:
+            if _normalize_markdown_destination(destination) == expected:
+                count += 1
+            suppressed_html_ranges.append((end + 1, consumed))
+        suppressed_html_ranges.sort()
         count += _count_visible_html_anchor_destination(
             line,
             expected,
@@ -4639,6 +4740,11 @@ def _validate_category_taxonomy(
                 f"schemas/category-taxonomy.yaml: category {category!r} "
                 "needs a description"
             )
+        elif description != CANONICAL_CATEGORY_DESCRIPTIONS.get(category):
+            errors.append(
+                f"schemas/category-taxonomy.yaml: category {category!r} "
+                "must match canonical category description"
+            )
         if not isinstance(examples, list) or not examples or not all(
             isinstance(example, str) and example.strip() for example in examples
         ):
@@ -4698,6 +4804,11 @@ def _validate_reader_rubric(root: Path, errors: list[str]) -> None:
             f"{rubric_path}: dimension set mismatch: "
             f"expected={list(READER_RUBRIC_DIMENSIONS)}, "
             f"actual={sorted(actual_dimensions)}"
+        )
+    if tuple(dimensions) != READER_RUBRIC_DIMENSIONS:
+        errors.append(
+            f"{rubric_path}: canonical reader dimension order must be "
+            f"{READER_RUBRIC_DIMENSIONS!r}; found {tuple(dimensions)!r}"
         )
 
     for dimension in sorted(expected_dimensions & actual_dimensions):
